@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <title>图层组件-综合性测试</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/yymap/dist/yy/yy.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.12.0/lib/theme-chalk/index.css">
+
+    <script src="https://webapi.amap.com/maps?v=1.4.11&key=9226262cf2a4134074696757476d3aca"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-ui@2.12.0/lib/index.js"></script>
+    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/cesium@1.70.0/Build/Cesium/Cesium.js'></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/yymap/dist/yy/yy.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/yymap-heatmap/dist/yymap-heatmap.min.js"></script>
+    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/yymap-cesium/dist/yymap-cesium.min.js'> </script>
+    <!-- 特定的版本 -->
+    <!-- <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/yymap-layercontrol@0.2.13/dist/yymap-layercontrol.min.js"></script> -->
+    <!-- 最新的版本 -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/yymap-layercontrol/dist/yymap-layercontrol.min.js">
+    </script>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+
+
+<body>
+
+    <div id="container">
+        <!-- <div class="pane">
+            <a href="javascript:drawTool.activate(YY.DrawTool.POLYGON);">画面</a>
+            <a href="javascript:drawTool.activate(YY.DrawTool.CIRCLE);">画圆</a>
+            <a href="javascript:layer.clear();">清除</a>
+        </div> -->
+        <div class="leftPanel">
+            <div class="iContainer" id="lefttinymap" :class="{ rotateI: leftispackUp }"
+                @click="leftispackUp = !leftispackUp">
+                <i class="el-icon-d-arrow-right"></i>
+            </div>
+            <ul class="map_box" :class="{ packUpDivLeft: leftispackUp }">
+                <li :class="{ activeli: sIndex == 0 }" @click="sIndex = 0">
+                    <el-dropdown @command="handleCommand" :class="{ activeli: sIndex == 0 }" placement="bottom">
+                        <span class="el-dropdown-link">
+                            <i class="el-icon-copy-document"></i>
+                            {{ dropdownName }}
+                        </span>
+                        <el-dropdown-menu slot="dropdown">
+                            <el-dropdown-item command="a">白模</el-dropdown-item>
+                            <el-dropdown-item command="b">影像</el-dropdown-item>
+                            <el-dropdown-item command="c">实景</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </el-dropdown>
+                </li>
+                <li :class="{ activeli: sIndex == 1 }" @click="kuangxuan">
+                    <i class="el-icon-full-screen"></i>
+                    框选
+                </li>
+                <li :class="{ activeli: sIndex == 2 }" @click="sIndex = 2">
+                    <i class="el-icon-top-left"></i>
+                    移动
+                </li>
+
+                <li :class="{ activeli: sIndex == 3 }" @click="zanting">
+                    <span v-if="xunzhuangStatus">
+                        <i class="el-icon-video-play"></i>
+                        暂停
+                    </span>
+                    <span v-else>
+                        <i class="el-icon-video-pause"></i>
+                        旋转
+                    </span>
+                </li>
+                <li :class="{ activeli: sIndex == 4 }" @click="clearLayer">
+                    <i class="el-icon-full-screen"></i>
+                    清除
+                </li>
+                <li>
+                    <!-- 场景选择器 -->
+                    <el-select v-model="secensValue" placeholder="请选择" class="fr" @change='changeSecen'>
+                        <el-option v-for="item in scenceData" :key="item.id" :label="item.name" :value="item.id">
+                        </el-option>
+                    </el-select>
+                </li>
+            </ul>
+
+
+
+        </div>
+       
+
+        <!-- <div id="search">
+            <el-row>
+                <el-col :span="13">
+                    <el-autocomplete v-if="!searchInLocal" size="small" clearable v-model="searchValue"
+                        :fetch-suggestions="querySearchAsync" placeholder="请输入你想搜索的内容" style="width:100%;"
+                        @select="handleSelect" @clear="clearSearch">
+                    </el-autocomplete>
+                    <el-row v-else>
+                        <el-col :span="18">
+                            <el-input v-model="keywords" size="small" placeholder="请输入你想搜索的内容" clearable
+                                @change="keywordsResult=[]"></el-input>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-button type="primary" size="small" @click="keywordsQuery">搜索</el-button>
+                        </el-col>
+                    </el-row>
+                </el-col>
+                <el-col :span="4">
+                    <div style="padding: 4px; line-height: 1.8;">
+                        <el-checkbox v-model="searchInLocal">站内搜索</el-checkbox>
+                    </div>
+                </el-col>
+                <el-col :span="7">
+                    <div class="map-tool">
+                        <a href="javascript:vm.drawOverlay(YY.DrawTool.POLYGON);">画面</a>
+                        <a href="javascript:vm.drawOverlay(YY.DrawTool.CIRCLE);">画圆</a>
+                        <a href="javascript:layer.clear();">清除</a>
+                    </div>
+                </el-col>
+            </el-row>
+        </div> -->
+        <div class="searchResult" v-if="searchInLocal&&keywords&&keywordsResult.length">
+            <el-collapse v-model="activeNames" accordion>
+                <el-collapse-item v-for="item in keywordsResult" :title="calLayerName(item)" :name="item.layer.id">
+                    <ul>
+                        <li v-for="d in item.details">
+                            {{d.name}}
+                            <el-button type="text" @click="locationByLi(item.layer,d)">高亮</el-button>
+                            <el-button type="text" @click="clearHighLight(item.layer,d)">清除高亮</el-button>
+                        </li>
+                    </ul>
+                </el-collapse-item>
+            </el-collapse>
+
+            <!-- <div v-for="item in keywordsResult">
+                {{item.layer.name}}
+                <ul>
+                    <li v-for="d in item.details">{{d.name}}</li>
+                </ul>
+            </div> -->
+        </div>
+
+        <!-- <div id="layertree">
+            <el-tree ref="layertree" :data="layerNodeData" node-key="id" show-checkbox default-expand-all
+                :highlight-current="false" @check-change="layerNodeCheckChange" :default-checked-keys="checkedNodes">
+                <span class="custom-tree-node" slot-scope="{ node, data }">
+                    <span>
+                        <img :src="data.icon" v-if="data.icon" style="width:15px;height:15px;" />
+                        <i v-else-if="data.children.length>0" class='el-icon-folder-add'>&nbsp; &nbsp; </i>
+                        <i v-else class='el-icon-document'>&nbsp; &nbsp; </i>
+                        {{ node.label }}
+                    </span>
+                </span>
+            </el-tree>
+        </div> -->
+        <div class="rightbox" :class="{ packUpDiv: ispackUp }">
+            <el-row id="search">
+                <el-col :span="24">
+                    <el-autocomplete v-if="!searchInLocal" size="small" clearable v-model="searchValue"
+                        :fetch-suggestions="querySearchAsync" placeholder="请输入你想搜索的内容" style="width:100%;"
+                        @select="handleSelect" @clear="clearSearch">
+                    </el-autocomplete>
+                    <el-row v-else>
+                        <el-col :span="18">
+                            <el-input v-model="keywords" size="small" placeholder="请输入你想搜索的内容" clearable
+                                @change="keywordsResult=[]"></el-input>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-button type="primary" size="small" @click="keywordsQuery">搜索</el-button>
+                        </el-col>
+                    </el-row>
+                </el-col>
+                <el-col :span="4">
+                    <div style="padding: 4px; line-height: 1.8;">
+                        <el-checkbox v-model="searchInLocal">站内搜索</el-checkbox>
+                    </div>
+                </el-col>
+            </el-row>
+
+            <!-- 单选框 -->
+            <div class="oneOuterBox" v-if="layerNodeData[0]">
+                <div class="oneBox" v-for="nodeItem in layerNodeData[0].children" :key="nodeItem.id">
+                    <div class="btitle">
+                        <i class="iconfont icon-changjing"></i>
+                        {{ nodeItem.name }}
+                    </div>
+                    <div class="switchContainer">
+                        <ul>
+                            <li v-for="item in nodeItem.children" :key="item.id">
+                                <img class="intimg" :src="item.icon" alt="" />
+
+                                <el-tooltip :content="item.name" placement="left" popper-class="tppltipStyle"
+                                    effect="light" v-if="item.name.length > 7">
+                                    <span class="subname">{{ item.name }}</span>
+                                </el-tooltip>
+                                <span class="subname" v-else>{{ item.name }}</span>
+                                <el-switch v-model="item.switchVal" active-color="#13ce66" inactive-color="#42486e"
+                                    @change="layerNodeCheckChange($event,item)">
+                                </el-switch>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="iContainer" :class="{ rotateI: ispackUp }" @click="ispackUp = !ispackUp">
+            <i class="el-icon-d-arrow-right"></i>
+        </div>
+
+
+        <div id="map"></div>
+        <el-dialog title="企业详情" :visible.sync="dialogVisible" width="30%">
+            <div v-for="item in qiyeInfo">
+                {{item.key}}:{{item.value}}
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+            </span>
+        </el-dialog>
+        <el-dialog title="框选详情" :visible.sync="dialogVisible1" width="30%">
+            <div v-for="(item,index) in spatialQueryInfo">
+                <span style="font-weight:bold;">{{item.layer.name}}</span>
+                <ul>
+                    <li v-for="(d,idx) in item.details">{{d.dwmc}}
+                        <ul>
+                            <li v-for="(ll,i) in d.properties">{{ll.key}}:{{ll.value}}</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible1 = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible1 = false">确 定</el-button>
+            </span>
+        </el-dialog>
+
+    </div>
+
+</body>
+<script type="text/javascript" src="./config.js"></script>
+<!-- <script type="text/javascript" src="./util.js"></script> -->
+<script>
+    const svg = `<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+                <svg t="1616464790152" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3742" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><defs><style type="text/css"></style></defs>
+                <path d="M515.2 339c-44.8 0-81 36.3-81 81 0 44.8 36.3 81 81 81s81-36.3 81-81-36.3-81-81-81z m0-243.1c-179 0-324.1 145.1-324.1 324.1 0 135.5 270.2 540.5 324.1 540.2 53 0.3 324.1-406.5 324.1-540.2 0-179-145.1-324.1-324.1-324.1z m0 459.2c-74.6 0-135.1-60.5-135.1-135.1s60.5-135.1 135.1-135.1S650.3 345.4 650.3 420c-0.1 74.6-60.5 135.1-135.1 135.1z" p-id="3743" fill="red">
+                </path>
+                </svg>
+                `;
+
+    const imageStyle = YY.Style.formatImage({
+        'markerWidth': 28,
+        'markerHeight': 32,
+        'markerDx': 0,
+        'markerDy': 0,
+        'markerOpacity': 1,
+        'markerFile': 'data:image/svg+xml;base64,' + btoa(svg)
+    });
+
+    var map, drawTool,
+        layer = new YY.VectorLayer(YY.H.uuid(), {
+            zIndex: 1000,
+            interactive: false,
+            hitDetect: false
+        });
+    layer.setZIndex(50000)
+
+    var searchLayer = new YY.VectorLayer(YY.H.uuid(), {
+        zIndex: 9999
+    });
+    var pageId, amapTileLayer, tdtTileLayer, tileLayer;
+
+
+
+    tileLayer =
+        YY.LayerLookup.createAmapVectorTileLayer({
+            mapStyle: "amap://styles/45284efe9e0eeeab14f57b1edf35812a",
+        });
+    amapTileLayer = YY.LayerLookup.lookup(
+        "tencent", {
+            style: "image",
+        }
+    );
+    tdtTileLayer = YY.LayerLookup.lookup(
+        "tencent", {
+            style: "image",
+        }
+    );
+
+    function tileModelMartixTransform(tileset) {
+        console.log(tileset);
+        if (!tileset) {
+            return;
+        }
+        var boundingSphere = tileset.boundingSphere;
+        const heightOffset = 0;
+        var cartographic = Cesium.Cartographic.fromCartesian(
+            boundingSphere.center
+        );
+        var longitude = Number(
+            Cesium.Math.toDegrees(cartographic.longitude).toFixed(6)
+        );
+        var latitude = Number(
+            Cesium.Math.toDegrees(cartographic.latitude).toFixed(6)
+        );
+        const [lng, lat] = YY.CT.transformWGS84ToAmap([longitude, latitude]);
+        console.log([lng, lat]);
+        var offsetvalue = Cesium.Cartographic.fromDegrees(
+            lng,
+            lat,
+            heightOffset
+        );
+        var surface = Cesium.Cartesian3.fromRadians(
+            cartographic.longitude,
+            cartographic.latitude,
+            0.0
+        );
+        var offset = Cesium.Cartesian3.fromRadians(
+            offsetvalue.longitude,
+            offsetvalue.latitude,
+            heightOffset
+        );
+        var translation = Cesium.Cartesian3.subtract(
+            offset,
+            surface,
+            new Cesium.Cartesian3()
+        );
+        tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+    }
+    console.log(525);
+    var cesiumLayer = new YY.CesiumLayer("cesium", {
+        gray: false,
+        geometryEvents: false,
+        minZoom: 17,
+    });
+    console.log(cesiumLayer);
+    var tileset = new YY.Cesium3DTileset({
+        url: 'http://58.211.183.162:7100/shengze1/tileset.json',
+    });
+    tileset.readyPromise.then(tileModelMartixTransform);
+    cesiumLayer.addPrimitive(tileset);
+    var tileset1 = new YY.Cesium3DTileset({
+        url: 'http://58.211.183.162:7100/shengze/fzc3dtiles/tileset.json',
+    });
+    tileset1.readyPromise.then(tileModelMartixTransform);
+
+    cesiumLayer.addPrimitive(tileset1);
+    cesiumLayer.hide();
+
+
+
+    function initMap() {
+        map = new YY.Map('map', YY.Util.extend({}, CONFIG.MAPCONFIG, {
+            minZoom: 0,
+            seamlessZoom: true
+        }));
+        const zoomControl = new YY.ZoomControl({
+            position: {
+                left: 20,
+                top: 100
+            }
+        });
+
+        map.addBaseLayer(tileLayer);
+        map.addBaseLayer(tdtTileLayer);
+        map.addBaseLayer(amapTileLayer);
+        map.addLayer(cesiumLayer);
+        console.log(cesiumLayer);
+        map.addControl(zoomControl);
+        map.addLayer(layer);
+        map.addLayer(searchLayer);
+        if (window.rotateMap) {
+            map.setBearing(map.getBearing() + 0.02);
+        }
+        drawTool = new YY.DrawTool(map, function (e) {
+            vm.isDraw = false;
+            const overlay = e.geometry;
+            layer.addOverlay(overlay);
+            drawTool.deactivate();
+            const time = 'query';
+            console.time(time);
+            const result = vm.layerControl.spatialQuery(overlay);
+            console.timeEnd(time);
+            console.log(result);
+            if (result.length === 0) {
+                vm.message('没有查到数据');
+                return;
+            }
+            result.forEach(f => {
+                const overlays = f.overlays.map(o => {
+                    o = o.clone();
+                    if (o.getType().includes('Point')) {
+                        o.setStyle(imageStyle)
+                    }
+                    if (o.getType().includes('Polygon')) {
+                        o.setStyle(YY.Style.formatFill({
+                            polygonFill: 'black',
+                            lineColor: 'yellow',
+                            lineDasharray: [3, 3]
+                        }));
+                    }
+                    return o;
+                });
+                layer.addOverlay(overlays);
+            });
+            vm.layerControl.spatialQueryDetail(result, (data) => {
+                vm.dialogVisible1 = true;
+                vm.spatialQueryInfo = data.map(d => {
+                    const layer = d.layer;
+                    const details = d.details;
+                    const list = [];
+                    details.forEach(element => {
+                        const keys = Object.keys(element);
+                        const properties = keys.map(key => {
+                            return {
+                                key,
+                                value: element[key]
+                            };
+                        })
+                        element.properties = properties;
+                        list.push(element);
+                    });
+                    return {
+                        layer,
+                        details: list
+                    };
+                })
+            });
+        });
+        window.animation = function animation() {
+            requestAnimationFrame(animation);
+            if (window.rotateMap) {
+                map.setBearing(map.getBearing() + 0.02);
+            }
+        }
+        animation()
+    }
+
+
+    var vm = new Vue({
+        el: '#container',
+        data: {
+            ispackUp: false,
+            leftispackUp: false,
+            selnodes: [],
+            searchValue: '',
+            keywords: '',
+            keywordsResult: [],
+            searchInLocal: true,
+            layerNodeData: [],
+            checkedNodes: [],
+            activeNames: [],
+            dialogVisible: false,
+            dialogVisible1: false,
+            qiyeInfo: [],
+            spatialQueryInfo: [],
+            isDraw: false,
+            selectData: [{
+                    "id": "8a808c7b794068030179a160f18f6206",
+                    "name": "1-476e8e70",
+                    "type": "Polygon",
+                    "lnglats": "120.60044543561371,31.13357234080162;120.60188113012258,31.133653205469294;120.60220411856302,31.131726290562813;120.60130408346318,31.131556870009323;120.59986850756313,31.131585402275945;120.5995895501576,31.132226363433734;120.60044543561371,31.13357234080162"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f18f6207",
+                    "name": "1-50f726c2",
+                    "type": "Polygon",
+                    "lnglats": "120.63005135603662,31.13078969947411;120.6335330694608,31.13088221032424;120.63292025504042,31.128359145248748;120.62978347753068,31.128397740983814;120.63005135603662,31.13078969947411"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f1ae6208",
+                    "name": "1-6e412fb8",
+                    "type": "Polygon",
+                    "lnglats": "120.59477529649158,31.134224615032494;120.6059374320259,31.134859169723185;120.60731116230299,31.13441815426758;120.60774099077827,31.133738205548603;120.6084289478831,31.132433185360018;120.60892397638368,31.13076085401173;120.60881672296526,31.130614189452366;120.60450366941764,31.13032134587104;120.59854596890737,31.130054014062353;120.5966404636883,31.12994603790568;120.59580550149087,31.13023181080044;120.59541979436044,31.130925772752327;120.59503408720168,31.131637965902563;120.5962110839136,31.13176014794246;120.59522575126695,31.132870456801122;120.59464768208893,31.133268262055132;120.59454018419451,31.133909836198505;120.59443290315458,31.1342759310162;120.59477529649158,31.134224615032494"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f1ae6209",
+                    "name": "10-27698f67",
+                    "type": "Polygon",
+                    "lnglats": "120.62404244254049,31.125787275444488;120.62875066653667,31.125775001574826;120.6284611067777,31.1223084567503;120.62433464126819,31.122375595147325;120.62403196803712,31.12516294090506;120.62404244254049,31.125787275444488"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f1be620a",
+                    "name": "10-415ccc4",
+                    "type": "Polygon",
+                    "lnglats": "120.64572191824307,31.130219407285317;120.64679929501408,31.130330202072567;120.64671377513756,31.129339858134234;120.64578720130034,31.129281676695964;120.64531296700983,31.12945494167686;120.64572191824307,31.130219407285317"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f1be620b",
+                    "name": "10-47d6c43",
+                    "type": "Polygon",
+                    "lnglats": "120.66678783171533,31.118082664802177;120.6686862896877,31.118084776700034;120.66873455383437,31.11800220964171;120.66873469392242,31.11581606012664;120.6667397042012,31.115800062319554;120.66678783171533,31.118082664802177"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f1be620c",
+                    "name": "11-24efe9a0",
+                    "type": "Polygon",
+                    "lnglats": "120.62536805071372,31.135084366342884;120.62633746946733,31.13528919136107;120.62653264448868,31.133798535863672;120.62504592857475,31.13382231240166;120.62478707061715,31.134230340073877;120.62472192034161,31.134855716438153;120.62536805071372,31.135084366342884"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f1be620d",
+                    "name": "11-461dbd0d",
+                    "type": "Polygon",
+                    "lnglats": "120.66008170523983,31.120973878028167;120.66612740725803,31.120943872413992;120.66613867877511,31.118335356276027;120.66011448479716,31.118383533985625;120.66008170523983,31.120973878028167"
+                },
+                {
+                    "id": "8a808c7b794068030179a160f1cd620e",
+                    "name": "11-7e75fe01",
+                    "type": "Polygon",
+                    "lnglats": "120.63015203389645,31.125208511808477;120.63195216048294,31.125157576125034;120.63201688187559,31.125064552136706;120.63152207929235,31.12238267348479;120.62985137440944,31.12235762173575;120.63015203389645,31.125208511808477"
+                },
+            ],
+            dropdownName: "图层",
+            sIndex: 0,
+            xunzhuangStatus: false,
+            secensValue: "",
+            scenceData: [], //保存所有场景
+            amapTileLayer: null,
+            tdtTileLayer: null,
+            tileLayer: null
+        },
+        watch: {
+            keywords() {
+                this.keywordsResult = [];
+            }
+        },
+        methods: {
+            drawOverlay(type) {
+                this.isDraw = true;
+                drawTool.activate(type);
+            },
+            calLayerName(data) {
+                return `${data.layer.name}(${data.details.length})`;
+            },
+            locationByLi(layerNode, d) {
+                console.log(d);
+                const overlay = this.layerControl.getOverlay(layerNode, d);
+                if (overlay) {
+                    if (overlay.getType().indexOf('Point') > -1) {
+                        map.setCenter(overlay.getCenter()).setZoom(18);
+                    } else {
+                        map.fitExtent(overlay.getBounds());
+                    }
+                }
+                this.layerControl.highLight(d);
+            },
+            clearHighLight(layer, d) {
+                this.layerControl.clearHighLight(d);
+            },
+            querySearchAsync(keywords, cb) {
+                if (!keywords) {
+                    cb([]);
+                } else {
+                    YY.AmapService.inputTips({
+                        keywords
+                    }, (res) => {
+                        const list = (res.tips || []).map(d => {
+                            return Object.assign({
+                                value: d.name
+                            }, d);
+                        });
+                        cb(list);
+                    });
+                }
+            },
+            keywordsQuery() {
+                if (!this.keywords.length) {
+                    this.message('输入你想搜索的内容');
+                    return;
+                }
+                this.layerControl.keyWordQuery(pageId, this.keywords, (data) => {
+                    this.keywordsResult = data.filter(d => {
+                        return d.details.length > 0;
+                    });
+                    if (this.keywordsResult.length === 0) {
+                        this.message('没有查到数据');
+                    }
+                });
+            },
+            handleSelect(e) {
+                this.clearSearch();
+                if (e.location) {
+                    map.setCenter(new YY.LngLat(e.location));
+                    map.setZoom(16);
+                    const point = new YY.Point(e.location, imageStyle);
+                    searchLayer.addOverlay(point);
+                }
+            },
+            clearSearch() {
+                searchLayer.clear();
+            },
+            layerNodeCheckChange(e, item) {
+                var nodes = this.selnodes;
+                console.log(e, item);
+                console.log('已选', this.selnodes);
+                if (e) {
+                    nodes.push(item);
+                } else {
+                    let xiaobiao = this.selnodes.findIndex((i) => i.id == item.id);
+                    nodes.splice(xiaobiao, 1);
+                }
+                console.log('dangqian', nodes);
+                this.layerControl.setNodes(nodes);
+            },
+            overlayOnClick(e) {
+                if (this.isDraw) {
+                    return;
+                }
+                this.layerControl.queryOverlayDetail(e.target, (data) => {
+                    data = data[0];
+                    if (!data) {
+                        return;
+                    }
+
+                    const info = data.details[0];
+                    if (!info) {
+                        this.message('没有查到信息,是不是忘记配置SQL了？或者数据是从接口里抓取的？');
+                        return;
+                    }
+                    this.dialogVisible = true;
+                    const keys = Object.keys(info);
+
+                    this.qiyeInfo = keys.map(key => {
+                        return {
+                            key,
+                            value: info[key]
+                        };
+                    })
+                });
+            },
+            overlayMouseMove(e) {
+                // console.log(e);
+            },
+            selectOverlay(d) {
+                const overlay = this.layerControl.selectOverlay(d);
+                if (overlay) {
+                    map.lookAt(overlay);
+                }
+                // this.layerControl.highLight(d);
+            },
+            message(message, type = 'warning') {
+                this.$message({
+                    message: message,
+                    type: type
+                });
+            },
+            successMessage(message) {
+                this.message(message, 'success');
+            },
+            errorMessage(message) {
+                this.message(message, 'error');
+            },
+            handleCommand(command) {
+                var aa, maxZoom = 22;
+                const map = window.map;
+                //   console.log(command);
+                if (command == "a") {
+                    this.dropdownName = "白模";
+                    aa = tileLayer
+                } else if (command == "b") {
+                    this.dropdownName = "影像";
+                    aa = amapTileLayer;
+                } else {
+                    this.dropdownName = "实景";
+                    aa = tdtTileLayer;
+                    cesiumLayer.show()
+                }
+                console.log(map, amapTileLayer, tdtTileLayer);
+
+                map.switchBaseLayer(aa);
+                map.setMaxZoom(maxZoom);
+
+            },
+            kuangxuan() {
+                console.log('框选');
+                this.sIndex = 1
+                this.drawOverlay(YY.DrawTool.POLYGON)
+            },
+            // 暂停操作
+            zanting() {
+                this.sIndex = 3;
+                // 改变旋转状态
+                this.xunzhuangStatus = !this.xunzhuangStatus;
+                window.rotateMap = this.xunzhuangStatus;
+                console.log(rotateMap);
+            },
+            clearLayer() {
+                this.sIndex = 4;
+                layer.clear()
+            },
+            changeSecen(value) {
+                console.log(value);
+                this.getPageId(value)
+            },
+            getPageId(pageId) {
+                // pageId = data[0].id;
+                const tileLayers = this.layerControl.getTileLayers(pageId, (tileLayers) => {
+                    tileLayers.forEach(tileLayer => {
+                        map.addBaseLayer(tileLayer);
+                    });
+                })
+                this.layerControl.getPageLayers(pageId, (json) => {
+                    // 格式化整个树的数据结构
+                    const data = this.layerControl.fromatLayerTreeNode(json.data || []);
+                    console.log('格式化整个树的数据结构', this.layerNodeData);
+
+                    if (!data || data.length === 0) {
+                        this.errorMessage('没有查到任何数据,至少有一个根节点');
+                        return;
+                    }
+                    const mapView = data[0].mapView;
+                    if (mapView) {
+                        map.setView(JSON.parse(mapView));
+                    }
+                    //获取默认选中的图层节点
+                    const checkedNodes = this.layerControl.getCheckedNodes(data);
+                    console.log('设置选中的图层节点', checkedNodes);
+
+                    this.selnodes = checkedNodes;
+                    this.checkedNodes = checkedNodes.map(d => {
+                        return d.id;
+                    });
+                    //设置选中的图层节点
+                    console.log('设置选中的图层节点', this.checkedNodes);
+
+                    this.layerNodeData = data.map(item => {
+                        if (item.children && item.children.length > 0) {
+                            item.children = item.children.map(secondItem => {
+                                if (secondItem.children && secondItem.children.length >
+                                    0) {
+                                    secondItem.children = secondItem.children.map(
+                                        thirdItem => {
+                                            let thirdId = thirdItem.id
+                                            return {
+                                                ...thirdItem,
+                                                switchVal: this.checkedNodes
+                                                    .indexOf(
+                                                        thirdId) != -1
+                                            }
+                                        })
+                                }
+                                return {
+                                    ...secondItem
+                                }
+                            })
+                        }
+                        return {
+                            ...item
+                        }
+                    })
+                    console.log(this.layerNodeData);
+                    this.layerControl.setNodes(checkedNodes);
+                });
+
+            }
+        },
+        mounted: function () {
+            initMap();
+
+
+            this.layerControl = window.layerControl = new LayerControl({
+                map,
+                // platformUrl: "http://localhost:9600/common/",
+                projectId: 'id-40637B1D-080A-4321-9BB0-602C58439D86',
+                url: CONFIG.SERVERURL,
+                onClick: this.overlayOnClick,
+                events: {
+                    'mousemove': this.overlayMouseMove
+                }
+            });
+            this.layerControl.getPages((data) => {
+                console.log(data);
+                this.scenceData = data;
+                console.log(this.scenceData);
+                //测试第一个页面
+                this.getPageId(data[0].id)
+                this.secensValue = data[0].name
+            });
+        }
+    });
+</script>
+
+</html>
